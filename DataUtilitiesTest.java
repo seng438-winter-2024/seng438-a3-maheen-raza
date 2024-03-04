@@ -256,6 +256,7 @@
           assertEquals(result, 10.0, .000000001d);
      }
  
+ 
      /*
       * The following test cases are NEW test cases for assignment 3 in order to increase branch coverage
       */
@@ -1223,7 +1224,7 @@
               final Values2D values = mockingContext.mock(Values2D.class);
               mockingContext.checking(new Expectations() {
                   {
-                         one(values).getRowCount();
+                          one(values).getRowCount();
                          will(returnValue(2));
                          one(values).getColumnCount();
                          will(returnValue(2)); 
