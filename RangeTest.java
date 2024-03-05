@@ -1,6 +1,6 @@
-package org.jfree.data.test;
+package org.jfree.data;
 
-import static org.junit.Assert.*; import org.jfree.data.Range; import org.junit.*;
+import static org.junit.Assert.*; import org.junit.*;
 
 public class RangeTest {
     private Range exampleRange;
@@ -458,9 +458,355 @@ public class RangeTest {
             assertEquals(expectedMessage, e.getMessage());
         }
     }
+    
+    
+    
+    @Test
+    public void testIntersectsDouble() {
+        Range range = new Range(0, 10);
+        
+        assertTrue(range.intersects(-5, 5));  // Test with intersecting range
+        assertTrue(range.intersects(5, 15));  // Test with intersecting range
+        assertFalse(range.intersects(-5, -1)); // Test with non-intersecting range
+        assertFalse(range.intersects(15, 20)); // Test with non-intersecting range
+    }
 
+    @Test
+    public void testIntersectsRange() {
+        Range range1 = new Range(0, 10);
+        Range range2 = new Range(5, 15);
+        Range range3 = new Range(-5, -1);
+        
+        assertTrue(range1.intersects(range2)); // Test with intersecting ranges
+        assertFalse(range1.intersects(range3)); // Test with non-intersecting ranges
+    }
 
+    @Test
+    public void testConstrain() {
+        Range range = new Range(0, 10);
+        
+        assertEquals(5, range.constrain(5), 0.001);  // Test with value within range
+        assertEquals(0, range.constrain(-5), 0.001); // Test with value below range
+        assertEquals(10, range.constrain(15), 0.001); // Test with value above range
+    }
+    
+    // Test cases for combineIgnoringNaN method
+    @Test
+    public void testCombineIgnoringNaN_WithBothRangesNull_ShouldReturnNull() {
+        assertNull(Range.combineIgnoringNaN(null, null));
+    }
+    
+    @Test
+    public void testCombineIgnoringNaN_WithOneRangeNullAndOtherNaN_ShouldReturnNull() {
+        assertNull(Range.combineIgnoringNaN(null, new Range(Double.NaN, Double.NaN)));
+        assertNull(Range.combineIgnoringNaN(new Range(Double.NaN, Double.NaN), null));
+    }
+    
+    @Test
+    public void testCombineIgnoringNaN_WithRegularRanges_ShouldCombineRangesIgnoringNaN() {
+        assertEquals(new Range(1, 3), Range.combineIgnoringNaN(new Range(1, 2), new Range(2, 3)));
+    }
 
+    // Test cases for expandToInclude method
+    @Test
+    public void testExpandToInclude_WithNullRange_ShouldExpandRangeToSingleValue() {
+        assertEquals(new Range(5, 5), Range.expandToInclude(null, 5));
+    }
+    
+    @Test
+    public void testExpandToInclude_WithValueWithinRange_ShouldExpandRangeToIncludeValue() {
+        assertEquals(new Range(1, 5), Range.expandToInclude(new Range(1, 4), 5));
+    }
+    
+    @Test
+    public void testExpandToInclude_WithValueBelowRange_ShouldExpandRangeToLowerBound() {
+        assertEquals(new Range(0, 4), Range.expandToInclude(new Range(1, 4), 0));
+    }
+    
+    @Test
+    public void testExpandToInclude_WithValueAboveRange_ShouldExpandRangeToUpperBound() {
+        assertEquals(new Range(1, 6), Range.expandToInclude(new Range(1, 4), 6));
+    }
+
+    // Test cases for expand method
+    @Test
+    public void testExpand_WithNullRange_ShouldThrowIllegalArgumentException() {
+        try {
+            Range.expand(null, 0.1, 0.1);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Success
+        }
+    }
+    
+    @Test
+    public void testExpand_WithPositiveMargins_ShouldExpandRangeByMargins() {
+        assertEquals(new Range(0, 11), Range.expand(new Range(1, 10), 0.1, 0.1));
+    }
+    
+    @Test
+    public void testExpand_WithNegativeMargins_ShouldReduceRangeByMargins() {
+        assertEquals(new Range(2, 9), Range.expand(new Range(1, 10), -0.1, -0.1));
+    }
+
+    // Test cases for shift method
+    @Test
+    public void testShift_WithNullRange_ShouldThrowIllegalArgumentException() {
+        try {
+            Range.shift(null, 0.1);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Success
+        }
+    }
+    
+    @Test
+    public void testShift_WithoutZeroCrossing_ShouldShiftRangeByDelta() {
+        assertEquals(new Range(2, 11), Range.shift(new Range(1, 10), 1));
+    }
+    
+    @Test
+    public void testShift_WithZeroCrossingAllowed_ShouldShiftRangeAndAllowZeroCrossing() {
+        assertEquals(new Range(0, 9), Range.shift(new Range(1, 10), -1, true));
+    }
+
+    // Test cases for scale method
+    @Test
+    public void testScale_WithNullRange_ShouldThrowIllegalArgumentException() {
+        try {
+            Range.scale(null, 0.1);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Success
+        }
+    }
+    
+    @Test
+    public void testScale_WithNegativeFactor_ShouldThrowIllegalArgumentException() {
+        try {
+            Range.scale(new Range(1, 10), -0.1);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Success
+        }
+    }
+    
+    @Test
+    public void testScale_WithPositiveFactor_ShouldScaleRangeByFactor() {
+        assertEquals(new Range(2, 20), Range.scale(new Range(1, 10), 2));
+    }
+    
+    
+    @Test
+    public void testHashCode_WithEqualRanges_ShouldReturnSameHashCode() {
+        Range range1 = new Range(0, 10);
+        Range range2 = new Range(0, 10);
+        
+        assertEquals(range1.hashCode(), range2.hashCode());
+    }
+    
+    @Test
+    public void testHashCode_WithDifferentLowerBounds_ShouldReturnDifferentHashCode() {
+        Range range1 = new Range(0, 10);
+        Range range2 = new Range(1, 10);
+        
+        assertNotEquals(range1.hashCode(), range2.hashCode());
+    }
+    
+    @Test
+    public void testHashCode_WithDifferentUpperBounds_ShouldReturnDifferentHashCode() {
+        Range range1 = new Range(0, 10);
+        Range range2 = new Range(0, 11);
+        
+        assertNotEquals(range1.hashCode(), range2.hashCode());
+    }
+    
+    @Test
+    public void testHashCode_WithNegativeRanges_ShouldReturnSameHashCode() {
+        Range range1 = new Range(-10, -5);
+        Range range2 = new Range(-10, -5);
+        
+        assertEquals(range1.hashCode(), range2.hashCode());
+    }
+    
+    @Test
+    public void testHashCode_WithNanRanges_ShouldReturnSameHashCode() {
+        Range range1 = new Range(Double.NaN, Double.NaN);
+        Range range2 = new Range(Double.NaN, Double.NaN);
+        
+        assertEquals(range1.hashCode(), range2.hashCode());
+    }
+
+    
+    @Test
+    public void testCombineIgnoringNaN_WithOneRangeNaN_ShouldReturnOtherRange() {
+        assertEquals(new Range(2, 3), Range.combineIgnoringNaN(new Range(1, 2), new Range(Double.NaN, Double.NaN)));
+        assertEquals(new Range(1, 2), Range.combineIgnoringNaN(new Range(Double.NaN, Double.NaN), new Range(1, 2)));
+    }
+    
+    
+    @Test
+    public void testCombineIgnoringNaN_WithOneRangeNegative_ShouldReturnOtherRange() {
+        assertEquals(new Range(-2, -1), Range.combineIgnoringNaN(new Range(-2, -1), new Range(1, 2)));
+        assertEquals(new Range(1, 2), Range.combineIgnoringNaN(new Range(1, 2), new Range(-2, -1)));
+    }
+    
+    @Test
+    public void testCombineIgnoringNaN_ValidRanges() {
+        Range range1 = new Range(0, 10);
+        Range range2 = new Range(5, 15);
+        Range combinedRange = Range.combineIgnoringNaN(range1, range2);
+        assertEquals(new Range(0, 15), combinedRange);
+    }
+
+    @Test
+    public void testCombineIgnoringNaN_OneRangeNull() {
+        Range range1 = new Range(0, 10);
+        Range combinedRange = Range.combineIgnoringNaN(range1, null);
+        assertEquals(range1, combinedRange);
+
+        Range range2 = new Range(5, 15);
+        combinedRange = Range.combineIgnoringNaN(null, range2);
+        assertEquals(range2, combinedRange);
+    }
+
+    @Test
+    public void testCombineIgnoringNaN_BothRangesNull() {
+        Range combinedRange = Range.combineIgnoringNaN(null, null);
+        assertNull(combinedRange);
+    }
+
+    @Test
+    public void testCombineIgnoringNaN_OneRangeNaN() {
+        Range range1 = new Range(Double.NaN, 10);
+        Range range2 = new Range(5, 15);
+        Range combinedRange = Range.combineIgnoringNaN(range1, range2);
+        assertEquals(range2, combinedRange);
+
+        range1 = new Range(0, 10);
+        range2 = new Range(Double.NaN, 15);
+        combinedRange = Range.combineIgnoringNaN(range1, range2);
+        assertEquals(range1, combinedRange);
+    }
+
+    @Test
+    public void testCombineIgnoringNaN_BothRangesNaN() {
+        Range range1 = new Range(Double.NaN, Double.NaN);
+        Range range2 = new Range(Double.NaN, Double.NaN);
+        Range combinedRange = Range.combineIgnoringNaN(range1, range2);
+        assertNull(combinedRange);
+    }
+
+    @Test
+    public void testCombineIgnoringNaN_EdgeCases() {
+        Range range1 = new Range(Double.MIN_VALUE, Double.MAX_VALUE);
+        Range range2 = new Range(-Double.MAX_VALUE, Double.NaN);
+        Range combinedRange = Range.combineIgnoringNaN(range1, range2);
+        assertEquals(new Range(-Double.MAX_VALUE, Double.MAX_VALUE), combinedRange);
+    }
+    
+    @Test
+    public void testExpand_IfBlockConditionTrue() {
+        // Test case where lower bound > upper bound after expansion
+        Range range = new Range(5, 10);
+        Range expandedRange = Range.expand(range, 0.6, 0.6);
+        assertTrue(expandedRange.getLowerBound() > expandedRange.getUpperBound());
+    }
+
+    @Test
+    public void testExpand_IfBlockConditionFalse() {
+        // Test case where lower bound <= upper bound after expansion
+        Range range = new Range(5, 10);
+        Range expandedRange = Range.expand(range, 0.1, 0.1);
+        assertTrue(expandedRange.getLowerBound() <= expandedRange.getUpperBound());
+    }
+    
+    @Test
+    public void testConstrain_ValueGreaterThanUpperBound() {
+        // Test case where value > upper bound
+        Range range = new Range(0, 10);
+        double constrainedValue = range.constrain(15);
+        assertEquals(10, constrainedValue, 0);
+    }
+
+    @Test
+    public void testConstrain_ValueLessThanLowerBound() {
+        // Test case where value < lower bound
+        Range range = new Range(0, 10);
+        double constrainedValue = range.constrain(-5);
+        assertEquals(0, constrainedValue, 0);
+    }
+
+    @Test
+    public void testConstrain_ValueWithinRange() {
+        // Test case where value within the range
+        Range range = new Range(0, 10);
+        double constrainedValue = range.constrain(5);
+        assertEquals(5, constrainedValue, 0);
+    }
+    
+    @Test
+    public void testShift_ValueGreaterThanZero_PositiveDelta() {
+        Range base = new Range(3.0, 6.0);
+        Range shifted = Range.shift(base, 2.0);
+        assertEquals(new Range(5.0, 8.0), shifted);
+    }
+
+    @Test
+    public void testShift_ValueGreaterThanZero_NegativeDelta() {
+        Range base = new Range(3.0, 6.0);
+        Range shifted = Range.shift(base, -2.0);
+        assertEquals(new Range(1.0, 4.0), shifted);
+    }
+
+    @Test
+    public void testShift_ValueLessThanZero_PositiveDelta() {
+        Range base = new Range(-6.0, -3.0);
+        Range shifted = Range.shift(base, 2.0);
+        assertEquals(new Range(-4.0, -1.0), shifted);
+    }
+
+    @Test
+    public void testShift_ValueLessThanZero_NegativeDelta() {
+        Range base = new Range(-6.0, -3.0);
+        Range shifted = Range.shift(base, -2.0);
+        assertEquals(new Range(-8.0, -5.0), shifted);
+    }
+
+    @Test
+    public void testShift_ValueEqualToZero_PositiveDelta() {
+        Range base = new Range(0.0, 0.0);
+        Range shifted = Range.shift(base, 2.0);
+        assertEquals(new Range(2.0, 2.0), shifted);
+    }
+
+    @Test
+    public void testShift_ValueEqualToZero_NegativeDelta() {
+        Range base = new Range(0.0, 0.0);
+        Range shifted = Range.shift(base, -2.0);
+        assertEquals(new Range(-2.0, -2.0), shifted);
+    }
+
+    @Test
+    public void testShift_ValueEqualToZero_ZeroDelta() {
+        Range base = new Range(0.0, 0.0);
+        Range shifted = Range.shift(base, 0.0);
+        assertEquals(new Range(0.0, 0.0), shifted);
+    }
+    
+    @Test
+    public void testExpandToInclude_ValueWithinRange() {
+        Range range = new Range(3.0, 6.0);
+        Range expanded = Range.expandToInclude(range, 4.0); // Value within range
+        assertEquals(range, expanded); // Expect the same range to be returned
+    }
+    
+    @Test
+    public void testContains_ReturnsTrue() {
+        Range range = new Range(3.0, 6.0);
+        assertTrue(range.contains(4.0)); // Value within range
+    }
+    
 
 
 
